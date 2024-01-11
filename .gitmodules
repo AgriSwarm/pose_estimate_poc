@@ -1,0 +1,6 @@
+[submodule "detection/detic"]
+	path = detection/detic
+	url = git@github.com:facebookresearch/Detic.git
+[submodule "detection/detectron2"]
+	path = detection/detectron2
+	url = git@github.com:facebookresearch/detectron2.git
