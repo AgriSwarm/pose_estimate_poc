@@ -1,30 +1,34 @@
 import open3d as o3d
 import numpy as np
+from sklearn.cluster import KMeans
 
 class GUIEditor:
     def __init__(self) -> None:
         self.coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
 
     def run(self,obj_path):
+        # interactive picking
         mesh = o3d.io.read_triangle_mesh(obj_path, enable_post_processing=True)
         picked_indices = []
         while len(picked_indices) < 2:
             picked_points = self._pick_points(mesh)
-            picked_indices = [pp.index for pp in picked_points]
+            picked_indices = [pp.coord for pp in picked_points]
 
+        # clastering
+        vertices = np.asarray(picked_indices)
+        kmeans = KMeans(n_clusters=2)
+        kmeans.fit(vertices)
+        centroids = kmeans.cluster_centers_
+
+        # visualize
         vis = o3d.visualization.Visualizer()
         vis.create_window()
-        for i in range(len(picked_indices) - 1):
-            p1 = np.asarray(mesh.vertices)[picked_indices[i]]
-            p2 = np.asarray(mesh.vertices)[picked_indices[i + 1]]
-            cylinder = self._create_cylinder_between_points(p1, p2, color=[1, 0, 0])
-            vis.add_geometry(cylinder)
-
+        cylinder = self._create_cylinder_between_points(centroids[0], centroids[1], color=[1, 0, 0])
+        vis.add_geometry(cylinder)
         vis.add_geometry(mesh)
         vis.add_geometry(self.coordinate_frame)
         vis.run() 
         vis.destroy_window()
-
 
     def _create_cylinder_between_points(self, p1, p2, color, radius=0.001):
         distance = np.linalg.norm(p1 - p2)
