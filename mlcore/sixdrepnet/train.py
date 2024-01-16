@@ -19,7 +19,6 @@ from torchvision import transforms
 import matplotlib
 from matplotlib import pyplot as plt
 from PIL import Image
-matplotlib.use('TkAgg')
 
 from model import SixDRepNet, SixDRepNet2
 import datasets
