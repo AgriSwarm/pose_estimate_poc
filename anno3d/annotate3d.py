@@ -9,6 +9,8 @@ class GUIEditor:
     def run(self,obj_path):
         # interactive picking
         mesh = o3d.io.read_triangle_mesh(obj_path, enable_post_processing=True)
+        assert mesh.textures
+
         picked_indices = []
         while len(picked_indices) < 2:
             picked_points = self._pick_points(mesh)
@@ -62,7 +64,7 @@ class GUIEditor:
     
 def main():
     editor = GUIEditor()
-    editor.run("stanford-bunny.obj")
+    editor.run("mesh.obj")
 
 if __name__ == "__main__":
     main()
