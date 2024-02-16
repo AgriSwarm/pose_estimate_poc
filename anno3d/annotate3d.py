@@ -18,26 +18,16 @@ class GUIEditor:
         mesh = o3d.io.read_triangle_mesh(obj_path, enable_post_processing=self.with_texture)
         assert mesh.textures
 
-        nerf_to_open3d = np.array([
-            [1, 0, 0, 0],
-            [0, 0, -1, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, 1]
-        ])
-        transform_matrix = np.array([
-[-0.5614292801786869, 0.8268592979224536, -0.03317928265090797, 0.5195994973182678],
-[-0.8257877680585626, -0.5623967795941137, -0.04224244816565299, 8.050601959228516],
-[-0.05358848274489096, 0.00368289849944943, 0.9985563132721876, 1.0177491903305054],
-[0.0, 0.0, 0.0, 1.0],
-        ])
-        c2w = transform_matrix
-        R = vtf.SO3.from_matrix(c2w[:3, :3])
-        # R = R @ vtf.SO3.from_x_radians(np.pi)
-        transform_matrix[:3,:3] = R.as_matrix()
-        # transform_matrix[:3,:3] = (vtf.SO3.from_matrix(np.eye(3)) @ vtf.SO3.from_x_radians(np.pi)).as_matrix()
-        
-        transform_matrix[:3,3] /= 10
-        self.coordinate_frame.transform(transform_matrix)
+        transforms = json.load(open("./output_for_mt/transforms.json"))
+        keys = sorted(list(transforms.keys()))
+        print(keys[0])
+        transforms = transforms[keys[0]]
+
+        c2w = np.eye(4)
+        c2w[:3,:4] = np.array(transforms["c2w"])
+        # c2w[:3,3] /= 10
+        print(c2w)
+        self.coordinate_frame.transform(c2w)
 
         # picked_indices = []
         # while len(picked_indices) < 2:
@@ -54,7 +44,6 @@ class GUIEditor:
         vis = o3d.visualization.Visualizer()
         vis.create_window(width=1080, height=1920)
         cylinder = self._create_cylinder_between_points(centroids[0], centroids[1], color=[1, 0, 0])
-        cylinder.transform(transform_matrix)
         vis.add_geometry(cylinder)
         vis.add_geometry(mesh)
         vis.add_geometry(self.coordinate_frame)
@@ -104,7 +93,7 @@ class Annotator:
             data = json.load(result_path.open("r"))
             already_processed = [d["name"] for d in data]
 
-        obj_list = [Path(path) for path in glob.glob("*.obj") if str(path) not in already_processed]
+        obj_list = [Path(path) for path in glob.glob("flower2/*.obj") if str(path) not in already_processed]
         for obj_path in tqdm(obj_list):
             print("Process:",obj_path)
             centroids = self.editor.run(str(obj_path))
