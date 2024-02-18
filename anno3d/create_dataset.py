@@ -1,6 +1,8 @@
 import cv2
 import json
+import tempfile
 import numpy as np
+from tqdm import tqdm
 from pathlib import Path
 from detector.predict_shot import predict
 from transform import transform_world_to_camera
@@ -21,26 +23,39 @@ def main():
     dataset_path.mkdir(exist_ok=True)
 
     transformed = transform_world_to_camera()
-    results = {}
-    for data in transformed:
+    transforms_results = {}
+    pbar = tqdm(transformed)
+    pbar.set_description("Create dataset")
+    for data in pbar:
         name = data["name"]
         image = data["image"]
         centroids = np.array(data["centroids"])
         vec = centroids[0] - centroids[1]
         rotation_matrix = compute_rotation_matrix(vec)
 
-        results = predict(image)
-        results = sorted(results, lambda x: x["bbox_xyxy"][0])
-        bbox = results[0]
-        cropped_image = cv2.crop(image, bbox)
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
+            cv2.imwrite(temp_file.name, image)
+            temp_image_path = temp_file.name
+
+            with open(temp_image_path, 'rb') as file:
+                image_binary = file.read()
+                results = predict(image_binary)
+
+        results = sorted(results, key = lambda x: x["bbox_xyxy"][0])
+        if len(results) == 0:
+            cropped_image = image
+        else:
+            x1,y1,x2,y2 = [int(z) for z in results[0]["bbox_xyxy"]]
+            cropped_image = image[x1:x2, y1:y2]
 
         filename = f"{name}.jpg"
-        cropped_image.save(filename)
-        results[filename].append({
-            "R": rotation_matrix
-        })
-        cropped_image.save(dataset_path / filename)
-    json.dump(results, open("./data/datasets.json", "w"))
+        transforms_results[filename] = {
+            "R": rotation_matrix.tolist()
+        }
+        filename = dataset_path / filename
+        cv2.imwrite(f"{filename}", cropped_image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+
+    json.dump(transforms_results, open("./data/datasets.json", "w"))
 
 
 if __name__ == "__main__":

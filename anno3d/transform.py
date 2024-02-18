@@ -57,8 +57,10 @@ def transform_world_to_camera():
     axes = np.array([[axis_length, 0, 0], [0, axis_length, 0], [0, 0, axis_length]])
     rotated_axes = np.dot(rotation_matrix, axes.T).T
 
-    results = {}
-    for (key, transform) in transforms.items():
+    results = []
+    pbar = tqdm(transforms.items())
+    pbar.set_description("Preprocess")
+    for (key, transform) in pbar:
         c2w = np.eye(4)
         c2w[:3, :4] = np.array(transform["c2w"])
         # w2c = np.linalg.inv(c2w)
@@ -88,7 +90,7 @@ def transform_world_to_camera():
         
         results.append({
             "name": image_number,
-            "images": image,
+            "image": image,
             "centroids": [transform_vector(c, w2c) for c in centroids]
         })
     return results
