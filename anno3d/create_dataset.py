@@ -46,7 +46,7 @@ def main():
             cropped_image = image
         else:
             x1,y1,x2,y2 = [int(z) for z in results[0]["bbox_xyxy"]]
-            cropped_image = image[x1:x2, y1:y2]
+            cropped_image = image[y1:y2, x1:x2]
 
         filename = f"{name}.jpg"
         transforms_results[filename] = {
