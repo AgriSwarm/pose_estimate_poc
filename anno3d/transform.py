@@ -8,6 +8,8 @@ from sklearn.cluster import KMeans
 from pathlib import Path
 from tqdm import tqdm
 
+DEBUG = False
+
 def normalize(v):
     norm = np.linalg.norm(v)
     return v / norm if norm != 0 else v
@@ -30,7 +32,7 @@ def compute_w2c(c2w):
     w2c[:3, 3] = translation_inv
     return w2c
 
-def main():
+def transform_world_to_camera():
     annotated = json.load(open("results.json"))
     centroids = np.array(annotated[0]["centroid"])
     vec = np.array(annotated[0]["vector"])
@@ -55,6 +57,7 @@ def main():
     axes = np.array([[axis_length, 0, 0], [0, axis_length, 0], [0, 0, axis_length]])
     rotated_axes = np.dot(rotation_matrix, axes.T).T
 
+    results = {}
     for (key, transform) in transforms.items():
         c2w = np.eye(4)
         c2w[:3, :4] = np.array(transform["c2w"])
@@ -74,12 +77,22 @@ def main():
         for axis, color in zip(transformed_axes, [(0, 0, 255), (0, 0, 0), (0, 0, 0)]):
             axis_point_image = project_to_image_plane(axis, intrinsic_matrix, dist_coeffs)
             axis_point_image = np.clip(axis_point_image, 0, 2000)
-            image = cv2.line(image, centroid_image, axis_point_image, color, 2)
+            if DEBUG:
+                image = cv2.line(image, centroid_image, axis_point_image, color, 2)
 
-        # Display the image
-        cv2.imshow("3D Axes", image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        if DEBUG:
+            # Display the image
+            cv2.imshow("3D Axes", image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+        
+        results.append({
+            "name": image_number,
+            "images": image,
+            "centroids": [transform_vector(c, w2c) for c in centroids]
+        })
+    return results
+        
 
 if __name__ == "__main__":
-    main()
+    transform_world_to_camera()

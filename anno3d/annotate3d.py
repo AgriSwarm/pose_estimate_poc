@@ -14,21 +14,31 @@ class GUIEditor:
 
     def run(self,obj_path):
         # interactive picking
-        mesh = o3d.io.read_triangle_mesh(obj_path, enable_post_processing=self.with_texture)
-        assert mesh.textures
+        mesh = o3d.io.read_triangle_mesh(obj_path, enable_post_processing=True)
+        # assert mesh.textures
 
-        picked_indices = []
-        while len(picked_indices) < 2:
-            picked_points = self._pick_points(mesh)
-            picked_indices = [pp.coord for pp in picked_points]
+        # picked_indices = []
+        # while len(picked_indices) < 2:
+        #     picked_points = self._pick_points(mesh)
+        #     picked_indices = [pp.coord for pp in picked_points]
 
-        # clastering
-        vertices = np.asarray(picked_indices)
-        kmeans = KMeans(n_clusters=2)
-        kmeans.fit(vertices)
-        centroids = kmeans.cluster_centers_
+        # # clastering
+        # vertices = np.asarray(picked_indices)
+        # kmeans = KMeans(n_clusters=2)
+        # kmeans.fit(vertices)
+        # centroids = kmeans.cluster_centers_
 
         # visualize
+        centroids = np.array([      [
+        -0.1717936952005733,
+        0.006830052641982381,
+        -0.296905056996779
+      ],
+      [
+        -0.17976252660155295,
+        -0.015862990170717236,
+        -0.2689466267824173
+      ]])
         vis = o3d.visualization.Visualizer()
         vis.create_window()
         cylinder = self._create_cylinder_between_points(centroids[0], centroids[1], color=[1, 0, 0])
@@ -39,7 +49,7 @@ class GUIEditor:
         vis.destroy_window()
         return centroids
 
-    def _create_cylinder_between_points(self, p1, p2, color, radius=0.001):
+    def _create_cylinder_between_points(self, p1, p2, color, radius=0.01):
         distance = np.linalg.norm(p1 - p2)
         mid_point = (p1 + p2) / 2
 
@@ -81,19 +91,21 @@ class Annotator:
             data = json.load(result_path.open("r"))
             already_processed = [d["name"] for d in data]
 
-        obj_list = [Path(path) for path in glob.glob("*.obj") if str(path) not in already_processed]
+        obj_list = [Path(path) for path in glob.glob("flower2/*.obj") if str(path) not in already_processed]
         for obj_path in tqdm(obj_list):
             print("Process:",obj_path)
             centroids = self.editor.run(str(obj_path))
             euler = self._compute_euler_angles(centroids[0], centroids[1])
+            vec = self._compute_vector(centroids[0], centroids[1])
             print("centroid:",centroids)
             print("euler:",euler)
             data.append({
                 "name": obj_path.name,
                 "centroid": centroids.tolist(),
-                "euler": euler
+                "euler": euler,
+                "vector": vec
             })
-            json.dump(data,result_path.open("w"))
+            # json.dump(data,result_path.open("w"))
             
     def _compute_euler_angles(self,vec1, vec2):
         x, y, z = [v2 - v1 for v1, v2 in zip(vec1, vec2)]
@@ -102,6 +114,9 @@ class Annotator:
         roll = 0
         return [math.degrees(x) for x in [yaw, pitch, roll]]
 
+    def _compute_vector(self, vec1, vec2):
+        x, y, z = [v2 - v1 for v1, v2 in zip(vec1, vec2)]
+        return x,y,z
 
 
 def main():
