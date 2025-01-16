@@ -4,6 +4,6 @@
 [submodule "detection/detectron2"]
 	path = detection/detectron2
 	url = git@github.com:facebookresearch/detectron2.git
-[submodule "anno3d/detector"]
-	path = anno3d/detector
-	url = git@github.com:AgriSwarm/detector.git
+[submodule "detection/detector"]
+	path = detection/detector
+	url = https://github.com/AgriSwarm/detector
