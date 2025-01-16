@@ -1,6 +1,9 @@
-**Flower Pose Estimation Model**
+# Flower Pose Estimation Model
 
 Given a flower image cropped from an object detection bounding box, this model predicts its pose in Euler angles.
+
+![Screenshot 2025-01-16 at 3 50 27](https://github.com/user-attachments/assets/708dd44c-d32e-4f18-b342-80d50316c640)
+
 
 ---
 
